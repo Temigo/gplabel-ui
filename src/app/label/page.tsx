@@ -25,15 +25,15 @@ import { MdCheckCircle } from 'react-icons/md'
 import { CiCrop, CiZoomIn, CiZoomOut } from 'react-icons/ci'
 import { GoChevronLeft, GoCheck } from 'react-icons/go'
 
-import { Annotorious } from '@recogito/annotorious';
-import { ShapeLabelsFormatter } from '@recogito/annotorious-shape-labels'
+//import { Annotorious } from '@recogito/annotorious';
+//import { ShapeLabelsFormatter } from '@recogito/annotorious-shape-labels'
 import '@recogito/annotorious/dist/annotorious.min.css';
 
 import { useRef, useState, useEffect } from 'react'
 import { useDisclosure } from '@chakra-ui/react'
 import uniqolor from 'uniqolor'
 
-var MyFormatter = (annotation) => {
+var MyFormatter = (annotation: any) => {
     console.log('formatting', annotation)
     if (annotation.bodies.length == 0) {
         return {}
@@ -50,13 +50,6 @@ export default function LabelPage() {
     const [ currentPosY, setCurrentPosY ] = useState(null)
     //const [ objects, setObjects ] = useState([]);
 
-    const drawRectangle = () => {
-      const context = canvasRef.current.getContext("2d");
-      context.strokeStyle = "white";
-      context.lineWidth = 2;
-      context.strokeRect(50, 30, 110, 90);
-      context.strokeRect(170, 65, 100, 80);
-    };
     // Ref to the image DOM element
     const imgEl = useRef();
 
@@ -74,6 +67,11 @@ export default function LabelPage() {
     // mounts, and keep the current 'anno'
     // instance in the application state
     useEffect(() => {
+        async function load() {
+            const x = await import('@recogito/annotorious');
+            return x.Annotorious;
+        }
+        load().then(Annotorious => {
       let annotorious = null;
 
       if (imgEl.current) {
@@ -92,6 +90,7 @@ export default function LabelPage() {
           //     'ShapeLabelsFormatter'
           // ]
         });
+        console.log('created', annotorious)
         annotorious.formatters = [...annotorious.formatters, MyFormatter ]
 
         // Attach event handlers here
@@ -136,7 +135,7 @@ export default function LabelPage() {
 
       // Keep current Annotorious instance in state
       setAnno(annotorious);
-
+  })
       // Cleanup: destroy current instance
       return () => annotorious.destroy();
     }, []);
