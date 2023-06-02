@@ -23,7 +23,7 @@ import {
 } from '@chakra-ui/react'
 import { MdCheckCircle } from 'react-icons/md'
 import { CiCrop, CiZoomIn, CiZoomOut } from 'react-icons/ci'
-import { GoChevronLeft, GoCheck } from 'react-icons/go'
+import { GoChevronLeft, GoCheck, GoX, GoTrashcan } from 'react-icons/go'
 
 //import { Annotorious } from '@recogito/annotorious';
 //import { ShapeLabelsFormatter } from '@recogito/annotorious-shape-labels'
@@ -44,12 +44,6 @@ var MyFormatter = (annotation: any) => {
 }
 
 export default function LabelPage() {
-    const canvasRef = useRef();
-
-    const [ currentPosX, setCurrentPosX ] = useState(null)
-    const [ currentPosY, setCurrentPosY ] = useState(null)
-    //const [ objects, setObjects ] = useState([]);
-
     // Ref to the image DOM element
     const imgEl = useRef();
 
@@ -58,11 +52,8 @@ export default function LabelPage() {
 
     // Current drawing tool name
     const [ tool, setTool ] = useState('rect');
-
-    const { isOpen, onToggle, onClose } = useDisclosure()
-
     const [ showLabelEditor, toggleLabelEditor ] = useState(false);
-    const labels = [ "plane", "drone", "balloon" ]
+    const labels = [ "other", "aircraft", "drone", "balloon", "bird", "kite", "helicopter"]
     // Init Annotorious when the component
     // mounts, and keep the current 'anno'
     // instance in the application state
@@ -101,7 +92,7 @@ export default function LabelPage() {
         });
         annotorious.on('selectAnnotation', (annotation, element) => {
             console.log('select annotation')
-            toggleLabelEditor(true);
+            //toggleLabelEditor(true);
             setSelectedLabel(annotation.body[0].value)
         });
         annotorious.on('updateAnnotation', (annotation, previous) => {
@@ -111,6 +102,7 @@ export default function LabelPage() {
         })
         annotorious.on('cancelSelected', selection => {
             toggleLabelEditor(false)
+            setSelectedLabel(-1)
         });
         annotorious.on('createAnnotation', annotation => {
           console.log('created', annotation, objects.length);
@@ -130,15 +122,16 @@ export default function LabelPage() {
 
         annotorious.on('deleteAnnotation', annotation => {
           console.log('deleted', annotation);
+          toggleLabelEditor(false)
         });
       }
-
       // Keep current Annotorious instance in state
       setAnno(annotorious);
-  })
+
       // Cleanup: destroy current instance
-      return () => annotorious.destroy();
-    }, []);
+      //return () => annotorious.destroy();
+    })
+  }, []);
 
     // Toggles current tool + button label
     const toggleTool = () => {
@@ -183,56 +176,26 @@ export default function LabelPage() {
     //     selectedLabel = anno.getSelected().body[0].value
     // }
     console.log("selectedLabel", selectedLabel)
-    // <canvas
-    //     ref={canvasRef}
-    //     style={{
-    //         height: "100%",
-    //         width: "100%",
-    //         background: "url('2023-03-01T10_05_54_18399.png')"
-    //     }}
-    //     alt='Frame'
-    //     onMouseDown={(e) => {
-    //         var rect = e.target.getBoundingClientRect();
-    //         var x = e.clientX - rect.left;
-    //         var y = e.clientY - rect.top;
-    //         console.log(x, y, rect.width, rect.height);
-    //         setCurrentPosX(x/rect.width);
-    //         setCurrentPosY(y/rect.height);
-    //     }}
-    //     onMouseUp={(e) => {
-    //         var rect = e.target.getBoundingClientRect();
-    //         var x = e.clientX - rect.left;
-    //         var y = e.clientY - rect.top;
-    //         setObjects([...objects, {
-    //             x: currentPosX,
-    //             y: currentPosY,
-    //             width: x/rect.width - currentPosX,
-    //             height: y/rect.height - currentPosY,
-    //             label:'other'
-    //         }])
-    //         console.log('added')
-    //     }}
-    // />
+    // <Flex h='50px' flexDirection='row' justifyContent='center'>
+    //     <IconButton
+    //         variant='outline'
+    //         colorScheme='teal'
+    //         fontSize='20px'
+    //         icon={<CiZoomIn/>}
+    //     />
+    //     <IconButton
+    //         variant='outline'
+    //         colorScheme='teal'
+    //         fontSize='20px'
+    //         icon={<CiZoomOut/>}
+    //     />
+    // </Flex>
 
     return (
         <Flex flexDirection='column' h='80vh' width='100%'>
             <Stack direction='row' align='stretch' h='70vh'>
                 <Flex w='70%' h='70vh' alignItems='center' justifyContent='center'>
                 <Stack direction='column' w='100%'  justifyContent='center' alignItems='center'>
-                    <Flex h='50px' flexDirection='row' justifyContent='center'>
-                        <IconButton
-                            variant='outline'
-                            colorScheme='teal'
-                            fontSize='20px'
-                            icon={<CiZoomIn/>}
-                        />
-                        <IconButton
-                            variant='outline'
-                            colorScheme='teal'
-                            fontSize='20px'
-                            icon={<CiZoomOut/>}
-                        />
-                    </Flex>
 
                     <Center>
                     <Image
@@ -242,17 +205,31 @@ export default function LabelPage() {
                     />
                     </Center>
                     <Flex flexDirection='row' width='70%'>
-                        <IconButton
+                        <Button
                             variant='outline'
                             fontSize='20px'
-                            icon={<GoChevronLeft/>}
-                        />
+                            leftIcon={<GoChevronLeft/>}
+                        >
+                            Previous
+                        </Button>
                         <Spacer/>
-                        <IconButton
+                        <Button
                             variant='outline'
                             fontSize='20px'
-                            icon={<GoCheck/>}
-                        />
+                            colorScheme='orange'
+                            rightIcon={<GoX/>}
+                        >
+                            Skip
+                        </Button>
+                        <Spacer/>
+                        <Button
+                            variant='outline'
+                            fontSize='20px'
+                            colorScheme='green'
+                            rightIcon={<GoCheck/>}
+                        >
+                            Save
+                        </Button>
                     </Flex>
                 </Stack>
                 </Flex>
@@ -266,19 +243,41 @@ export default function LabelPage() {
                         {objects.map((item, idx) => {
                             console.log('hsl(' + (idx * (360 / 10) %360) +'100%,50%)');
                             return (
-                            <LinkBox as="article" key={idx} onClick={() => {
-                                anno.selectAnnotation(item.annotation)
-                                toggleLabelEditor(true)
-                                setSelectedLabel(item.annotation.body[0].value)
-                            }}>
-                            <Card bg={uniqolor(item.annotation.id).color}>
+
+                            <Card
+                                borderColor='tomato'
+                                key={idx}
+                                borderWidth={(selectedLabel !== -1 && anno !== undefined && anno.getSelected() !== undefined &&  anno.getSelected().id == item.annotation.id) ? 5 : 0}
+                                bg={uniqolor(item.annotation.id).color} direction="row" alignItems='center'>
+                                <LinkBox as="article"  onClick={() => {
+                                    if (Number(selectedLabel) == -1) {
+                                        anno.selectAnnotation(item.annotation)
+                                        toggleLabelEditor(true)
+                                        setSelectedLabel(item.annotation.body[0].value)
+                                    }
+                                }}>
                                 <CardBody>
-                                <LinkOverlay href="#">
-                                <Badge size='lg'>{item.label == "" ? "" : labels[item.label]} </Badge>
-                                </LinkOverlay>
+                                    <LinkOverlay href="#">
+                                    <Badge size='lg'>{item.label == "" ? "" : labels[item.label]} </Badge>
+                                    </LinkOverlay>
                                 </CardBody>
+                                </LinkBox>
+                                <Spacer/>
+                                <Box>
+                                <IconButton
+                                    variant="ghost"
+                                    colorScheme='black'
+                                    size='lg'
+                                    icon={<GoTrashcan/>}
+                                    onClick={() => {
+                                        anno.removeAnnotation(item.annotation)
+                                        toggleLabelEditor(false)
+                                        setSelectedLabel(-1)
+                                    }}
+                                />
+                                </Box>
                             </Card>
-                            </LinkBox>
+
                             );
                         })}
                     </Stack>
@@ -289,13 +288,13 @@ export default function LabelPage() {
                     <Heading size='md'>
                         Pick a label
                     </Heading>
-                    <RadioGroup onChange={async (idx) => label(idx)}>
+                    <RadioGroup onChange={async (idx) => label(idx)} defaultValue={(Number(selectedLabel) == -1) ? "0" : Number(selectedLabel).toString()}>
                         <Stack>
                         {labels.map((item, idx) =>
                             <Radio
                                 size='lg'
                                 colorScheme='tomato'
-                                value={idx}
+                                value={idx.toString()}
                                 key={idx} >
                                 {item}
                             </Radio>
