@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:open": "cypress open",
+    "test:run": "cypress run"
   },
   "dependencies": {
     "@auth/core": "^0.7.1",
@@ -19,15 +21,22 @@
     "@types/node": "20.2.5",
     "@types/react": "18.2.7",
     "@types/react-dom": "18.2.4",
+    "axios": "^1.4.0",
     "eslint": "8.41.0",
     "eslint-config-next": "13.4.4",
     "framer-motion": "^10.12.16",
-    "next": "^13.4.3",
+    "next": "^13.4.2",
     "next-auth": "^4.22.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-icons": "^4.9.0",
+    "react-query": "^3.39.3",
     "typescript": "5.0.4",
     "uniqolor": "^1.1.0"
+  },
+  "devDependencies": {
+    "@testing-library/cypress": "^9.0.0",
+    "cypress": "^12.13.0",
+    "cypress-social-logins": "^1.14.1"
   }
 }
