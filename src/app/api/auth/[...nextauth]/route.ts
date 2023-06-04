@@ -44,11 +44,15 @@ export const authOptions: NextAuthOptions = {
       })
       ],
       callbacks: {
-          async redirect({ url, baseUrl }) {
-              console.log('redirect', url, baseUrl)
-            return url.startsWith(baseUrl)
-              ? url
-              : baseUrl
+          async session({ session, token, user }) {
+            console.log('callback', token, user)
+            // Send properties to the client, like an access_token and user id from a provider.
+            // session.accessToken = token.accessToken
+            session.user.id = user.id
+            session.user.annotations = user.annotations
+            session.user.images = user.images
+
+            return session
           }
       }
 

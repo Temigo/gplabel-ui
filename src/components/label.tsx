@@ -25,18 +25,22 @@ import { MdCheckCircle } from 'react-icons/md'
 import { CiCrop, CiZoomIn, CiZoomOut } from 'react-icons/ci'
 import { GoChevronLeft, GoCheck, GoX, GoTrashcan } from 'react-icons/go'
 
-//import { Annotorious } from '@recogito/annotorious';
-//import { ShapeLabelsFormatter } from '@recogito/annotorious-shape-labels'
 import '@recogito/annotorious/dist/annotorious.min.css';
 
 import { useRef, useState, useEffect } from 'react'
 import { useDisclosure } from '@chakra-ui/react'
 import uniqolor from 'uniqolor'
 
-import { downloadImage, getImage } from "../api.js"
+import {
+    downloadImage,
+    getImage,
+    labels,
+    saveAnnotations,
+    getAnnotationsByImage
+} from "../api.js"
 
+// Coloring annotation boxes with id-dependent color
 var MyFormatter = (annotation: any) => {
-    console.log('formatting', annotation)
     if (annotation.bodies.length == 0) {
         return {}
     }
@@ -45,15 +49,60 @@ var MyFormatter = (annotation: any) => {
     }
 }
 
+var updateAnnotations = (anno, data) => {
+    anno.clearAnnotations();
+    data.forEach((a) => {
+        anno.addAnnotation({
+            "@context": "http://www.w3.org/ns/anno.jsonld",
+            body: [{
+                type: "TextualBody",
+                purpose: "tagging",
+                value: labels.indexOf(a.label).toString()
+            }],
+            id: `${a.id}`,
+            type: "Annotation",
+            new: false,
+            target: {
+                selector: {
+                    type: "FragmentSelector",
+                    conformsTo: "http://www.w3.org/TR/media-frags/",
+                    value: `xywh=percent:${a.x},${a.y},${a.width},${a.height}`
+                },
+            }
+        });
+    });
+}
+
+var getAnnotationList = (anno) => {
+    if (anno !== undefined) { console.log("setting objects with ", anno.getAnnotations()) }
+    return (anno == undefined) ? [] : anno.getAnnotations().map((annotation) => {
+        let ar = annotation.target.selector.value.split(":")[1].split(",")
+        return {
+            x: Number(ar[0]),
+            y: Number(ar[1]),
+            width: Number(ar[2]),
+            height: Number(ar[3]),
+            label: annotation.body[0] == undefined ? "" : annotation.body[0].value,
+            annotation: annotation
+        }
+    }).sort((a, b) => a.id < b.id) // Keep order of annotations constant
+}
+
 export default function LabelPage(props) {
     // Contains src to image
     const [imageSrc, setImageSrc] = useState("");
+    const [imageBlob, setImageBlob] = useState();
+
     // Contains dict of image attributes
     const [ currentImage, setCurrentImage] = useState();
-    console.log("current image", currentImage)
+    console.log("current image", currentImage, props.userId, props.imageId)
 
     // Ref to the image DOM element
     const imgEl = useRef();
+    // The current Annotorious instance
+    const [ anno, setAnno ] = useState();
+    const [ showLabelEditor, toggleLabelEditor ] = useState(false);
+    const [ selectedLabel, setSelectedLabel ] = useState(-1)
 
     // Download image
     useEffect(() => {
@@ -64,16 +113,23 @@ export default function LabelPage(props) {
             }).then((data) => {
                 var url = URL.createObjectURL(data);
                 setImageSrc(url);
-            })
+                setImageBlob(data);
+            });
     }, []);
 
-    // The current Annotorious instance
-    const [ anno, setAnno ] = useState();
+    const [ objects, setObjects ] = useState([])
 
-    // Current drawing tool name
-    const [ tool, setTool ] = useState('rect');
-    const [ showLabelEditor, toggleLabelEditor ] = useState(false);
-    const labels = [ "other", "aircraft", "drone", "balloon", "bird", "kite", "helicopter"]
+    useEffect(() => {
+        if ((anno !== undefined) && (imageBlob !== undefined) && imgEl.current) {
+            getAnnotationsByImage(props.imageId)
+                .then((data) => {
+                    updateAnnotations(anno, data)
+                    setObjects(getAnnotationList(anno))
+                    //console.log("got annotations", objects)
+                })
+        }
+    }, [imageSrc, anno])
+
     // Init Annotorious when the component
     // mounts, and keep the current 'anno'
     // instance in the application state
@@ -83,133 +139,79 @@ export default function LabelPage(props) {
             return x.Annotorious;
         }
         load().then(Annotorious => {
-      let annotorious = null;
+            let annotorious = null;
 
-      if (imgEl.current) {
-        // Init
-        annotorious = new Annotorious({
-          image: imgEl.current,
-          //crosshair: true,
-          disableEditor: true,
-          fragmentUnit: "percent",
-          handleRadius: 4,
-          widgets: [
-              //LabelWidget,
-              {widget: 'TAG', vocabulary: ['plane', 'drone']}
-          ],
-          // formatter: [
-          //     'ShapeLabelsFormatter'
-          // ]
-        });
-        console.log('created', annotorious)
-        annotorious.formatters = [...annotorious.formatters, MyFormatter ]
+            if (imgEl.current) {
+                // Init
+                annotorious = new Annotorious({
+                  image: imgEl.current,
+                  //crosshair: true,
+                  disableEditor: true,
+                  fragmentUnit: "percent",
+                  handleRadius: 4,
+                });
+                annotorious.formatters = [...annotorious.formatters, MyFormatter ]
 
-        // Attach event handlers here
-        annotorious.on('createSelection', selection => {
-            console.log('new selection', selection)
-            const { snippet, transform } = annotorious.getSelectedImageSnippet();
-            toggleLabelEditor(true);
-        });
-        annotorious.on('selectAnnotation', (annotation, element) => {
-            console.log('select annotation')
-            //toggleLabelEditor(true);
-            setSelectedLabel(annotation.body[0].value)
-        });
-        annotorious.on('updateAnnotation', (annotation, previous) => {
-            console.log('update annotation')
-            toggleLabelEditor(false)
-            setSelectedLabel(-1)
+                // Attach event handlers here
+                annotorious.on('createSelection', selection => {
+                    console.log('new selection', selection)
+                    toggleLabelEditor(true);
+                    setObjects(getAnnotationList(anno))
+                });
+                annotorious.on('selectAnnotation', (annotation, element) => {
+                    console.log('select annotation')
+                    //toggleLabelEditor(true);
+                    setSelectedLabel(annotation.body[0].value)
+                });
+                annotorious.on('updateAnnotation', (annotation, previous) => {
+                    console.log('update annotation')
+                    toggleLabelEditor(false)
+                    setSelectedLabel(-1)
+                    setObjects(getAnnotationList(anno))
+                })
+                annotorious.on('cancelSelected', selection => {
+                    toggleLabelEditor(false)
+                    setSelectedLabel(-1)
+                });
+                annotorious.on('createAnnotation', annotation => {
+                  console.log('created', annotation, objects.length);
+                  //setObjects(getAnnotationList(anno))
+                });
+
+                annotorious.on('deleteAnnotation', annotation => {
+                  console.log('deleted', annotation);
+                  toggleLabelEditor(false)
+                  setObjects(getAnnotationList(anno))
+                });
+
+            }
+            // Keep current Annotorious instance in state
+            setAnno(annotorious);
+
+            // Cleanup: destroy current instance
+            //return () => annotorious.destroy();
         })
-        annotorious.on('cancelSelected', selection => {
-            toggleLabelEditor(false)
-            setSelectedLabel(-1)
-        });
-        annotorious.on('createAnnotation', annotation => {
-          console.log('created', annotation, objects.length);
-          // let ar = annotation.target.selector.value.split(":")[1].split(",")
-          // setObjects([...objects, {
-          //     x: Number(ar[0]),
-          //     y: Number(ar[1]),
-          //     width: Number(ar[2]),
-          //     height: Number(ar[3]),
-          //     label: annotation.body[0].value
-          // }])
-        });
+    }, []);
 
-        annotorious.on('updateAnnotation', (annotation, previous) => {
-          console.log('updated', annotation, previous);
-        });
-
-        annotorious.on('deleteAnnotation', annotation => {
-          console.log('deleted', annotation);
-          toggleLabelEditor(false)
-        });
-      }
-      // Keep current Annotorious instance in state
-      setAnno(annotorious);
-
-      // Cleanup: destroy current instance
-      //return () => annotorious.destroy();
-    })
-  }, []);
-
-    // Toggles current tool + button label
-    const toggleTool = () => {
-      if (tool === 'rect') {
-        setTool('polygon');
-        anno.setDrawingTool('polygon');
-      } else {
-        setTool('rect');
-        anno.setDrawingTool('rect');
-      }
-    }
-
-    let objects = anno == undefined ? [] : anno.getAnnotations().map((annotation) => {
-        let ar = annotation.target.selector.value.split(":")[1].split(",")
-        return {
-            x: Number(ar[0]),
-            y: Number(ar[1]),
-            width: Number(ar[2]),
-            height: Number(ar[3]),
-            label: annotation.body[0] == undefined ? "" : annotation.body[0].value,
-            annotation: annotation
-        }
-    })
-
+    // Function to add label to existing annotation
     let label = async (idx) => {
-        console.log('labeling')
+        //console.log('labeling')
         let s = anno.getSelected();
         s.body = [{
             type: 'TextualBody',
             purpose: 'tagging',
             value: idx
         }]
-        await anno.updateSelected(s);
-        anno.saveSelected();
-        toggleLabelEditor();
+        anno.updateSelected(s, true)
+        // This function updateSelected will not save immediately
+        // hence the async. We need it to be saved for the annotation
+        // to have an uid assigned to it. We should not update objects
+        // until the uid is assigned. Hence the timeout of 200ms.
+        toggleLabelEditor(false);
+        setTimeout(() => setObjects(getAnnotationList(anno)), 200)
     }
 
     console.log("objects", objects)
-    console.log(anno == undefined ? "" : anno.getSelected())
-    const [ selectedLabel, setSelectedLabel ] = useState(-1)
-    // if (anno !== undefined && anno.getSelected() !== undefined && anno.getSelected().body[0] !== undefined) {
-    //     selectedLabel = anno.getSelected().body[0].value
-    // }
-    console.log("selectedLabel", selectedLabel)
-    // <Flex h='50px' flexDirection='row' justifyContent='center'>
-    //     <IconButton
-    //         variant='outline'
-    //         colorScheme='teal'
-    //         fontSize='20px'
-    //         icon={<CiZoomIn/>}
-    //     />
-    //     <IconButton
-    //         variant='outline'
-    //         colorScheme='teal'
-    //         fontSize='20px'
-    //         icon={<CiZoomOut/>}
-    //     />
-    // </Flex>
 
     return (
         <Flex flexDirection='column' h='80vh' width='100%'>
@@ -247,6 +249,10 @@ export default function LabelPage(props) {
                             fontSize='20px'
                             colorScheme='green'
                             rightIcon={<GoCheck/>}
+                            onClick={async () => {
+                                var list = await saveAnnotations(objects, props.imageId, props.userId)
+                                updateAnnotations(anno, list)
+                            }}
                         >
                             Save
                         </Button>
@@ -261,7 +267,6 @@ export default function LabelPage(props) {
                     </Heading>
                     <Stack spacing={3}>
                         {objects.map((item, idx) => {
-                            console.log('hsl(' + (idx * (360 / 10) %360) +'100%,50%)');
                             return (
 
                             <Card
@@ -293,6 +298,7 @@ export default function LabelPage(props) {
                                         anno.removeAnnotation(item.annotation)
                                         toggleLabelEditor(false)
                                         setSelectedLabel(-1)
+                                        setObjects(getAnnotationList(anno))
                                     }}
                                 />
                                 </Box>

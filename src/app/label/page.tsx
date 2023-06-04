@@ -7,8 +7,10 @@ import LabelPage from "../../components/label.tsx"
 export default async function LabelInterface() {
     const session = await getServerSession(authOptions);
     console.log("session", session)
+
     if (session) {
-        return <LabelPage imageId={1} />
+        var imageId = 1; // hardcoded for test
+        return <LabelPage imageId={imageId} userId={session.user.id}/>
     } else {
         redirect("/api/auth/signin")
     }

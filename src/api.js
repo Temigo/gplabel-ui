@@ -1,5 +1,7 @@
 import axios from "./axios.js"
 
+export const labels = [ "other", "aircraft", "drone", "balloon", "bird", "kite", "helicopter"];
+
 export function getUser(userId) {
     return axios.get(`/user/${userId}`)
         .then((response) => response.data)
@@ -142,6 +144,7 @@ export function useVerificationToken(verificationToken) {
         })
 }
 
+// Image routes
 export function downloadImage(filename) {
     return axios.get(`/static/${filename}`,{
             responseType: 'blob'
@@ -154,6 +157,38 @@ export function downloadImage(filename) {
 
 export function getImage(imageId) {
     return axios.get(`/image/${imageId}`)
+        .then((response) => response.data)
+        .catch((error) => {
+            throw new Error(error);
+        })
+}
+
+// Annotation routes
+export function saveAnnotations(annotations, imageId, userId) {
+    return axios.post(`/annotation/save/?image_id=${imageId}&user_id=${userId}`, {
+            data: annotations.map((anno) => {
+                var db_anno = {
+                    x: anno.x,
+                    y: anno.y,
+                    width: anno.width,
+                    height: anno.height,
+                    label: labels[Number(anno.label)],
+                    image_id: imageId,
+                    user_id: userId,
+                    timestamp: Date.now()
+                }
+                if (anno.annotation.new !== undefined && !anno.annotation.new ) db_anno.id = anno.id;
+                return db_anno;
+            })
+        })
+        .then((response) => response.data)
+        .catch((error) => {
+            throw new Error(error);
+        })
+}
+
+export function getAnnotationsByImage(imageId) {
+    return axios.get(`/image/${imageId}/annotations`)
         .then((response) => response.data)
         .catch((error) => {
             throw new Error(error);
