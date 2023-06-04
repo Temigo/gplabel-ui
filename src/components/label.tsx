@@ -33,6 +33,8 @@ import { useRef, useState, useEffect } from 'react'
 import { useDisclosure } from '@chakra-ui/react'
 import uniqolor from 'uniqolor'
 
+import { downloadImage, getImage } from "../api.js"
+
 var MyFormatter = (annotation: any) => {
     console.log('formatting', annotation)
     if (annotation.bodies.length == 0) {
@@ -43,9 +45,27 @@ var MyFormatter = (annotation: any) => {
     }
 }
 
-export default function LabelPage() {
+export default function LabelPage(props) {
+    // Contains src to image
+    const [imageSrc, setImageSrc] = useState("");
+    // Contains dict of image attributes
+    const [ currentImage, setCurrentImage] = useState();
+    console.log("current image", currentImage)
+
     // Ref to the image DOM element
     const imgEl = useRef();
+
+    // Download image
+    useEffect(() => {
+        getImage(props.imageId)
+            .then((data) => {
+                setCurrentImage(data);
+                return downloadImage(data.filename);
+            }).then((data) => {
+                var url = URL.createObjectURL(data);
+                setImageSrc(url);
+            })
+    }, []);
 
     // The current Annotorious instance
     const [ anno, setAnno ] = useState();
@@ -200,7 +220,7 @@ export default function LabelPage() {
                     <Center>
                     <Image
                         ref={imgEl}
-                        src="2023-03-01T10_05_54_18399.png"
+                        src={imageSrc}
                         alt='Frame'
                     />
                     </Center>

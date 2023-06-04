@@ -141,3 +141,21 @@ export function useVerificationToken(verificationToken) {
             throw new Error(error);
         })
 }
+
+export function downloadImage(filename) {
+    return axios.get(`/static/${filename}`,{
+            responseType: 'blob'
+        })
+        .then((response) => response.data)
+        .catch((error) => {
+            throw new Error(error);
+        })
+}
+
+export function getImage(imageId) {
+    return axios.get(`/image/${imageId}`)
+        .then((response) => response.data)
+        .catch((error) => {
+            throw new Error(error);
+        })
+}

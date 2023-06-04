@@ -8,7 +8,7 @@ export default async function LabelInterface() {
     const session = await getServerSession(authOptions);
     console.log("session", session)
     if (session) {
-        return <LabelPage />
+        return <LabelPage imageId={1} />
     } else {
         redirect("/api/auth/signin")
     }
