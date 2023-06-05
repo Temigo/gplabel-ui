@@ -146,7 +146,7 @@ export function useVerificationToken(verificationToken) {
 
 // Image routes
 export function downloadImage(filename) {
-    console.log("process.env.API_URL", process.env.API_URL)
+    console.log("process.env.API_URL", process.env.NEXT_PUBLIC_API_URL)
     return axios.get(`/static/${filename}`,{
             responseType: 'blob'
         })
@@ -157,7 +157,7 @@ export function downloadImage(filename) {
 }
 
 export function getImage(imageId) {
-    console.log("process.env.API_URL", process.env.API_URL)
+    console.log("process.env.API_URL", process.env.NEXT_PUBLIC_API_URL)
     return axios.get(`/image/${imageId}`)
         .then((response) => response.data)
         .catch((error) => {

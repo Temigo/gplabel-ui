@@ -21,10 +21,10 @@ NEXTAUTH_URL=http://localhost:3000
 NEXTAUTH_SECRET=xxx  # generate this with `openssl rand -base64 32` for example
 GOOGLE_ID=xxx
 GOOGLE_SECRET=xxx
-API_URL=http://localhost:8000
+NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
-`GOOGLE_*` variables come from setting up an API key in Google Developer Console. Same for `GITHUB_*`. Ask me for key values that we can share for development. `API_URL` points to the concurrently running backend.
+`GOOGLE_*` variables come from setting up an API key in Google Developer Console. Same for `GITHUB_*`. Ask me for key values that we can share for development. `NEXT_PUBLIC_API_URL` points to the concurrently running backend.
 
 
 ## Getting Started
