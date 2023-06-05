@@ -1,6 +1,30 @@
 # GP Label Frontend
 
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+This is a [Next.js](https://nextjs.org/) project.
+
+## Install
+Recommend using [Node Version Manager](https://github.com/nvm-sh/nvm) (nvm).
+
+```bash
+nvm install lts/gallium # or any more recent node version
+nvm use lts/gallium
+cd gplabel-ui
+npm install # install dependencies based on package.json
+```
+
+You will need to create a file at the root of the repository `.env.local` with the following environment variables:
+
+```
+GITHUB_ID=xxx
+GITHUB_SECRET=xxx
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=xxx  # generate this with `openssl rand -base64 32` for example
+GOOGLE_ID=xxx
+GOOGLE_SECRET=xxx
+API_URL=http://localhost:8000
+```
+
+`GOOGLE_*` variables come from setting up an API key in Google Developer Console. Same for `GITHUB_*`. Ask me for key values that we can share for development.
 
 ## Getting Started
 
@@ -8,17 +32,21 @@ First, run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+
+## Testing
+
+WIP - using [Cypress](https://www.cypress.io/) for tests.
+
+```
+npm run test:open
+npm run test:run
+```
 
 ## Learn More
 
