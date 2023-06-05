@@ -43,7 +43,7 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 WIP - using [Cypress](https://www.cypress.io/) for tests.
 
-```
+```bash
 npm run test:open
 npm run test:run
 ```
