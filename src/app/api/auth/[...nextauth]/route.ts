@@ -7,6 +7,7 @@ import Google from 'next-auth/providers/google'
 import CredentialsProvider from "next-auth/providers/credentials"
 import Adapter from "./adapter" // DB adapter
 
+
 export const authOptions: NextAuthOptions = {
     //site: process.env.NEXTAUTH_URL == undefined ? "" : process.env.NEXTAUTH_URL,
     theme: {
