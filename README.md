@@ -26,7 +26,6 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 
 `GOOGLE_*` variables come from setting up an API key in Google Developer Console. Same for `GITHUB_*`. Ask me for key values that we can share for development. `NEXT_PUBLIC_API_URL` points to the concurrently running backend.
 
-
 ## Getting Started
 
 First, run the development server:
